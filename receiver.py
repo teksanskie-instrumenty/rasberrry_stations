@@ -7,7 +7,7 @@ import paho.mqtt.client as mqtt
 
 client = mqtt.Client()
 client.username_pw_set("iot", "G516cD8#rSb£")
-topic = "get/task"
+topic = "check/user"
 broker = "iot-proj.swisz.cz"
 # broker="localhost"
 
