@@ -72,7 +72,7 @@ def display_machine_info(station_name, station_color):
     image_outer = Image.new("RGB", (disp.width, disp.height), "WHITE")
     draw = ImageDraw.Draw(image_outer)
 
-    text = 'There are no exercises, go home' if station_name is None else f'Go to machine: {station_name}'
+    text = 'There are no exercises, go home' if station_name is None else f'Go to machine:\n{station_name}'
 
     color_rgb = tuple(int(station_color[i:i + 2], 16) for i in (0, 2, 4))
 
