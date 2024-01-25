@@ -111,8 +111,7 @@ def display_welcome_message():
 
     draw.text(text_position, text, font=font, fill=text_color)
 
-    image_outer.save('welcome.jpg')
-    image_outer.show()
+    disp.ShowImage(image_outer, 0, 0)
 
 
 
