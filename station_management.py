@@ -68,6 +68,8 @@ disp.clear()
 
 MIFAREReader = MFRC522()
 
+last_card_scanned_time = time.time()
+
 def display_machine_info(station_name, station_color):
     image_outer = Image.new("RGB", (disp.width, disp.height), "WHITE")
     draw = ImageDraw.Draw(image_outer)
@@ -128,7 +130,6 @@ def read_card_id(uid):
 try:
     client.loop_start()
     display_welcome_message()
-    last_card_scanned_time = time.time()
 
     while True:
         #catching card input and input validation
