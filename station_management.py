@@ -1,3 +1,4 @@
+import json
 import time
 from PIL import Image, ImageDraw, ImageFont
 import qrcode
@@ -5,11 +6,14 @@ import paho.mqtt.client as mqtt
 import RPi.GPIO as GPIO
 from mfrc522 import MFRC522
 from kod.tests.lib.oled import SSD1331 as SSD1331
-from qr_codes import generate_qr_code, oledtest
+from qr_codes import generate_qr_code, qr_oled_display
 
 # Konfiguracja GPIO
 # TODO
 
+disp = SSD1331.SSD1331()
+disp.Init()
+disp.clear()
 
 MQTT_BROKER = "iot-proj.swisz.cz"
 MQTT_PORT = 1883
@@ -19,17 +23,43 @@ client.username_pw_set("iot", "G516cD8#rSb£")
 client.connect(MQTT_BROKER, MQTT_PORT, 60)
 
 def process_message(mosq, obj, msg):
+    print(msg.topic)
     response = msg.payload.decode('utf-8')
-    if response == 'Card not assigned to user':
-        print('kod kuer')
+    if msg.topic == 'check/user/resp':
+        if response == 'Card not assigned to user':
+            qr_data = f"iot-proj.swisz.cz/register/{card_id}"
+            qr_code_image = generate_qr_code(qr_data)
+
+            qr_oled_display(disp, qr_code_image)
+            # qr_code_image.save("qr_test.jpg")
+            # print('gugu gaga')
+        else:
+            obj = json.loads(response)
+            client.publish('get/task', card_id)
+
+    elif msg.topic == 'get/task/resp':
+        data = json.loads(msg.payload)
+        exercises = data['dailyPlanExercises']
+
+        for exercise in exercises:
+            if exercise["is_finished"] == False:
+                station = exercise['exercise']['station']
+
+                print(station['name'])
+                print(station['color'])
+
+                display_machine_info(station['name'], station['color'])
+                return
+        #TODO if there are no excercises available
+        print("No excercises available!")
+        display_machine_info(None, None)
+
+        # print(data)
+
 
 client.on_message = process_message
 client.subscribe('check/user/resp')
-
-# MQTT_PORT = 3000
-# MQTT_PORT = 3001
-# MQTT_PORT = 5432
-# MQTT_PORT = 3567
+client.subscribe('get/task/resp')
 
 
 disp = SSD1331.SSD1331()
@@ -38,52 +68,25 @@ disp.clear()
 
 MIFAREReader = MFRC522()
 
-QR_URL = "qr_test.jpg"
+def display_machine_info(station_name, station_color):
+    image_outer = Image.new("RGB", (disp.width, disp.height), "WHITE")
+    draw = ImageDraw.Draw(image_outer)
 
-# Card data handling
-def handle_card_inserted(card_id):
-    print('aaaaa')
-    user_exists = check_user_in_database(card_id)
+    text = 'There are no exercises, go home' if station_name is None else f'Go to machine: {station_name}'
 
-    if user_exists:
-        direct_user_to_station()
-    else:
-        #QR generation and sending to server
-        qr_code_path = generate_qr_code(card_id)
-        # send_qr_code_to_server(qr_code_path)
+    #basic values
+    font = None
+    font_size = 20
 
+    text_color = "black"
 
-        # wait_for_card_reinsert()
+    text_position = (10, 10)
 
+    draw.text(text_position, text, font=font, fill=text_color)
 
-#TODO
-def check_user_in_database(card_id):
+    #TODO: station color
 
-    global client
-    client.publish('check/user', card_id)
-    return False
-
-
-
-
-# def send_card_id_to_server(card_id):
-#     client = mqtt.Client()
-#     client.connect(MQTT_BROKER, MQTT_PORT, 60)
-#     client.publish(MQTT_TOPIC, card_id)
-#     client.disconnect()
-
-#TODO
-def direct_user_to_station():
-    return False
-
-
-# def send_qr_code_to_server(qr_code_path):
-#     with open(qr_code_path, "rb") as file:
-#         qr_code_data = file.read()
-
-#     client.publish(MQTT_TOPIC, qr_code_data)
-#     client.disconnect()
-
+    disp.ShowImage(image_outer, 0, 0)
 
 
 
@@ -107,7 +110,7 @@ try:
 
             if status == MIFAREReader.MI_OK:
                 card_id = read_card_id(uid)
-                handle_card_inserted(card_id)
+                client.publish('check/user', card_id)
         time.sleep(0.1)
 
 
