@@ -69,6 +69,7 @@ disp.clear()
 MIFAREReader = MFRC522()
 
 last_card_scanned_time = time.time()
+TIME_TO_CLEAR = 60
 
 def display_machine_info(station_name, station_color):
     image_outer = Image.new("RGB", (disp.width, disp.height), "WHITE")
@@ -144,7 +145,7 @@ try:
                 last_card_scanned_time = time.time()
 
         # Clear the screen and display the welcome message
-        if time.time() - last_card_scanned_time >= 10:
+        if time.time() - last_card_scanned_time >= TIME_TO_CLEAR:
             last_card_scanned_time = time.time()
             disp.clear()
             display_welcome_message()
