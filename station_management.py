@@ -76,12 +76,12 @@ def display_machine_info(station_name, station_color):
 
     color_rgb = tuple(int(station_color[i:i + 2], 16) for i in (0, 2, 4))
 
-    circle_radius = min((100, 100)) // 4
+    circle_radius = min((disp.width, disp.height)) // 4
     circle_bbox = (
-        (100, 100)[0] - circle_radius,  # x-coordinate of the left side
-        (100, 100)[1] - circle_radius,  # y-coordinate of the top side
-        (100, 100)[0],  # x-coordinate of the right side (unchanged for bottom-right placement)
-        (100, 100)[1]  # y-coordinate of the bottom side (unchanged for bottom-right placement)
+        (disp.width, disp.height)[0] - circle_radius,
+        (disp.width, disp.height)[1] - circle_radius,
+        (disp.width, disp.height)[0],
+        (disp.width, disp.height)[1]
     )
 
     draw.ellipse(circle_bbox, fill=color_rgb)
