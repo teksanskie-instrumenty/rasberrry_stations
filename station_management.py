@@ -98,6 +98,22 @@ def display_machine_info(station_name, station_color):
 
     disp.ShowImage(image_outer, 0, 0)
 
+def display_welcome_message():
+    image_outer = Image.new("RGB",  (disp.width, disp.height), "WHITE")
+    draw = ImageDraw.Draw(image_outer)
+
+    text = 'Welcome! \nScan your card'
+    text_position = (10, 10)
+    text_color = "black"
+
+    font = None
+    font_size = 20
+
+    draw.text(text_position, text, font=font, fill=text_color)
+
+    image_outer.save('welcome.jpg')
+    image_outer.show()
+
 
 
 #Translating the card ID
@@ -112,6 +128,7 @@ def read_card_id(uid):
 # main loop
 try:
     client.loop_start()
+    display_welcome_message()
     while True:
         #catching card input and input validation
         (status, TagType) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQIDL)
