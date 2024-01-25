@@ -129,6 +129,8 @@ def read_card_id(uid):
 try:
     client.loop_start()
     display_welcome_message()
+    last_card_scanned_time = time.time()
+
     while True:
         #catching card input and input validation
         (status, TagType) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQIDL)
@@ -138,6 +140,14 @@ try:
             if status == MIFAREReader.MI_OK:
                 card_id = read_card_id(uid)
                 client.publish('check/user', card_id)
+
+                last_card_scanned_time = time.time()
+
+        # Clear the screen and display the welcome message
+        if time.time() - last_card_scanned_time >= 10:
+            last_card_scanned_time = time.time()
+            disp.clear()
+            display_welcome_message()
         time.sleep(0.1)
 
 
