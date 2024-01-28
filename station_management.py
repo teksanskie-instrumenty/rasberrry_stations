@@ -15,6 +15,8 @@ disp = SSD1331.SSD1331()
 disp.Init()
 disp.clear()
 
+fontSmall = ImageFont.truetype("./kod/tests/lib/oled/Font.ttf", 10)
+
 MQTT_BROKER = "iot-proj.swisz.cz"
 MQTT_PORT = 1883
 
@@ -22,11 +24,13 @@ client = mqtt.Client()
 client.username_pw_set("iot", "G516cD8#rSb£")
 client.connect(MQTT_BROKER, MQTT_PORT, 60)
 
+
 def process_message(mosq, obj, msg):
     print(msg.topic)
-    response = msg.payload.decode('utf-8')
-    if msg.topic == 'check/user/resp':
-        if response == 'Card not assigned to user':
+    response = msg.payload.decode("utf-8")
+    print(response)
+    if msg.topic == "check/user/resp":
+        if response == "Card not assigned to user":
             qr_data = f"iot-proj.swisz.cz/register/{card_id}"
             qr_code_image = generate_qr_code(qr_data)
 
@@ -35,22 +39,22 @@ def process_message(mosq, obj, msg):
             # print('gugu gaga')
         else:
             obj = json.loads(response)
-            client.publish('get/task', card_id)
+            client.publish("get/task", card_id)
 
-    elif msg.topic == 'get/task/resp':
+    elif msg.topic == "get/task/resp":
         data = json.loads(msg.payload)
-        exercises = data['dailyPlanExercises']
+        exercises = data["dailyPlanExercises"]
 
         for exercise in exercises:
             if exercise["is_finished"] == False:
-                station = exercise['exercise']['station']
+                station = exercise["exercise"]["station"]
 
-                print(station['name'])
-                print(station['color'])
+                print(station["name"])
+                print(station["color"])
 
-                display_machine_info(station['name'], station['color'])
+                display_machine_info(station["name"], station["color"])
                 return
-        #TODO if there are no excercises available
+        # TODO if there are no excercises available
         print("No excercises available!")
         display_machine_info(None, None)
 
@@ -58,8 +62,8 @@ def process_message(mosq, obj, msg):
 
 
 client.on_message = process_message
-client.subscribe('check/user/resp')
-client.subscribe('get/task/resp')
+client.subscribe("check/user/resp")
+client.subscribe("get/task/resp")
 
 
 disp = SSD1331.SSD1331()
@@ -71,26 +75,32 @@ MIFAREReader = MFRC522()
 last_card_scanned_time = time.time()
 TIME_TO_CLEAR = 60
 
+
 def display_machine_info(station_name, station_color):
     image_outer = Image.new("RGB", (disp.width, disp.height), "WHITE")
     draw = ImageDraw.Draw(image_outer)
 
-    text = 'There are no exercises, go home' if station_name is None else f'Go to machine:\n{station_name}'
-
-    color_rgb = tuple(int(station_color[i:i + 2], 16) for i in (0, 2, 4))
-
-    circle_radius = min((disp.width, disp.height)) // 4
-    circle_bbox = (
-        (disp.width, disp.height)[0] - circle_radius,
-        (disp.width, disp.height)[1] - circle_radius,
-        (disp.width, disp.height)[0],
-        (disp.width, disp.height)[1]
+    text = (
+        "There are no exercises, go home"
+        if station_name is None
+        else f"Go to machine:\n{station_name}"
     )
 
-    draw.ellipse(circle_bbox, fill=color_rgb)
+    if station_name is not None:
+        color_rgb = tuple(int(station_color[i : i + 2], 16) for i in (0, 2, 4))
 
-    #basic values
-    font = None
+        circle_radius = min((disp.width, disp.height)) // 4
+        circle_bbox = (
+            (disp.width, disp.height)[0] - circle_radius,
+            (disp.width, disp.height)[1] - circle_radius,
+            (disp.width, disp.height)[0],
+            (disp.width, disp.height)[1],
+        )
+
+        draw.ellipse(circle_bbox, fill=color_rgb)
+
+    # basic values
+    font = fontSmall
     font_size = 20
 
     text_color = "black"
@@ -100,12 +110,13 @@ def display_machine_info(station_name, station_color):
     draw.text(text_position, text, font=font, fill=text_color)
 
     disp.ShowImage(image_outer, 0, 0)
+
 
 def display_welcome_message():
-    image_outer = Image.new("RGB",  (disp.width, disp.height), "WHITE")
+    image_outer = Image.new("RGB", (disp.width, disp.height), "WHITE")
     draw = ImageDraw.Draw(image_outer)
 
-    text = 'Welcome! \nScan your card'
+    text = "Welcome! \nScan your card"
     text_position = (10, 10)
     text_color = "black"
 
@@ -117,8 +128,7 @@ def display_welcome_message():
     disp.ShowImage(image_outer, 0, 0)
 
 
-
-#Translating the card ID
+# Translating the card ID
 def read_card_id(uid):
     num = 0
     for i in range(0, len(uid)):
@@ -133,14 +143,14 @@ try:
     display_welcome_message()
 
     while True:
-        #catching card input and input validation
+        # catching card input and input validation
         (status, TagType) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQIDL)
         if status == MIFAREReader.MI_OK:
             (status, uid) = MIFAREReader.MFRC522_Anticoll()
 
             if status == MIFAREReader.MI_OK:
                 card_id = read_card_id(uid)
-                client.publish('check/user', card_id)
+                client.publish("check/user", card_id)
 
                 last_card_scanned_time = time.time()
 
@@ -150,7 +160,6 @@ try:
             disp.clear()
             display_welcome_message()
         time.sleep(0.1)
-
 
 
 except KeyboardInterrupt:
